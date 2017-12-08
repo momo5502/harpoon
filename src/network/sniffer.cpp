@@ -38,14 +38,10 @@ namespace network
 			if (win_diver_receive(this->handle, buffer, maxSize, &packet.address, &size) == TRUE)
 			{
 				PWINDIVERT_IPHDR ipHeader = PWINDIVERT_IPHDR(buffer);
-				PWINDIVERT_UDPHDR udpHeader = PWINDIVERT_UDPHDR(buffer + (ipHeader->HdrLength * 4));
 
 				packet.drop = false;
 				packet.sniffer = this;
-				packet.raw_data = std::string_view(LPSTR(buffer), size);
-				packet.data = std::string_view(LPSTR(udpHeader) + sizeof(WINDIVERT_UDPHDR), ntohs(udpHeader->Length) - sizeof(WINDIVERT_UDPHDR));
-
-				if (udpHeader->Length <= sizeof(WINDIVERT_UDPHDR) || packet.data.size() > maxSize) packet.data = std::string_view(LPSTR(udpHeader), 0);
+				packet.data = std::string_view(LPSTR(buffer), size);
 
 				IN_ADDR addr;
 				addr.S_un.S_addr = ipHeader->SrcAddr;
@@ -54,11 +50,8 @@ namespace network
 				addr.S_un.S_addr = ipHeader->DstAddr;
 				packet.target.set_ipv4(addr);
 
-				packet.source.set_port(ntohs(udpHeader->SrcPort));
-				packet.target.set_port(ntohs(udpHeader->DstPort));
-
 				if (this->callback) this->callback(&packet);
-				if (!packet.drop) win_diver_send(this->handle, PVOID(packet.raw_data.data()), UINT(packet.raw_data.size()), &packet.address, &size);
+				if (!packet.drop) win_diver_send(this->handle, PVOID(packet.data.data()), UINT(packet.data.size()), &packet.address, &size);
 			}
 			else
 			{
@@ -69,11 +62,11 @@ namespace network
 
 	bool sniffer::send(network::packet* packet)
 	{
-		this->divert.invoke_pascal<BOOL>("WinDivertHelperCalcChecksums", PVOID(packet->raw_data.data()), UINT(packet->raw_data.size()), 0ui64);
+		this->divert.invoke_pascal<BOOL>("WinDivertHelperCalcChecksums", PVOID(packet->data.data()), UINT(packet->data.size()), 0ui64);
 
 		u_int size = 0;
-		BOOL result = this->divert.invoke_pascal<BOOL>("WinDivertSend", this->handle, PVOID(packet->raw_data.data()), UINT(packet->raw_data.size()), &packet->address, &size) == TRUE;
-		return (result && size == packet->raw_data.size());
+		BOOL result = this->divert.invoke_pascal<BOOL>("WinDivertSend", this->handle, PVOID(packet->data.data()), UINT(packet->data.size()), &packet->address, &size) == TRUE;
+		return (result && size == packet->data.size());
 	}
 
 	void sniffer::on_packet(packet_callback _callback)

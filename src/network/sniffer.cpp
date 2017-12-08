@@ -84,10 +84,10 @@ namespace network
 	void sniffer::extract_ressources()
 	{
 #ifndef _WIN64
-		BOOL is64Bit = FALSE;
-		IsWow64Process(GetCurrentProcess(), &is64Bit);
+		BOOL is_64_bit = FALSE;
+		IsWow64Process(GetCurrentProcess(), &is_64_bit);
 
-		if (is64Bit)
+		if (is_64_bit)
 		{
 #endif
 			std::ofstream driver("WinDivert64.sys", std::ios::binary | std::ofstream::out);

@@ -48,6 +48,10 @@ workspace "harpoon"
 		resincludedirs {
 			"$(ProjectDir)src" -- fix for VS IDE
 		}
+		
+		filter "platforms:x64"
+			defines { "X64" }
+		filter {}
 
 		-- Pre-compiled header
 		pchheader "std_include.hpp" -- must be exactly same as used in #include directives

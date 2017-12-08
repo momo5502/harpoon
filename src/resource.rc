@@ -90,10 +90,10 @@ END
 // Binary Data
 //
 
-#ifndef _WIN64
-WINDIVERT_DLL        RCDATA "..\\deps\\divert\\x86\\WinDivert.dll"
-#else
+#if defined(X64)
 WINDIVERT_DLL        RCDATA "..\\deps\\divert\\amd64\\WinDivert.dll"
+#else
+WINDIVERT_DLL        RCDATA "..\\deps\\divert\\x86\\WinDivert.dll"
 #endif
 
 WINDIVERT_DRIVER_x86 RCDATA "..\\deps\\divert\\x86\\WinDivert32.sys"

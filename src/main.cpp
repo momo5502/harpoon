@@ -16,32 +16,29 @@ int main(int /*argc*/, char** /*argv*/)
 	});
 
 	bool available = false;
-	WINDIVERT_ADDRESS address;
-	address.Direction = WINDIVERT_DIRECTION_OUTBOUND;
 
 	std::thread worker([&]()
 	{
-		arphdr_t header;
-		header.htype = 1;
-		header.ptype = 0x0800;
-		header.hlen = 6;
-		header.plen = 4;
-		header.oper = ARP_REPLY;
-
-		std::memcpy(header.sha, "\xFF\xFF\xFF\xFF\xFF\xFF", header.hlen);
-		std::memcpy(header.spa, &network::address("192.168.0.1").get_in_addr()->sin_addr.S_un.S_addr, header.plen);
-
-		std::memcpy(header.tha, "\xFF\xFF\xFF\xFF\xFF\xFF", header.hlen);
-		std::memcpy(header.tpa, &network::address("192.168.0.234").get_in_addr()->sin_addr.S_un.S_addr, header.plen);
+// 		arphdr_t header;
+// 		header.htype = 1;
+// 		header.ptype = 0x0800;
+// 		header.hlen = 6;
+// 		header.plen = 4;
+// 		header.oper = ARP_REPLY;
+// 
+// 		std::memcpy(header.sha, "\xFF\xFF\xFF\xFF\xFF\xFF", header.hlen);
+// 		std::memcpy(header.spa, &network::address("192.168.0.1").get_in_addr()->sin_addr.S_un.S_addr, header.plen);
+// 
+// 		std::memcpy(header.tha, "\xFF\xFF\xFF\xFF\xFF\xFF", header.hlen);
+// 		std::memcpy(header.tpa, &network::address("192.168.0.234").get_in_addr()->sin_addr.S_un.S_addr, header.plen);
 
 		network::packet packet;
-		packet.data = std::string_view(LPSTR(&header), sizeof(header));
+		//packet.data = std::string_view(LPSTR(&header), sizeof(header));
 
 		while (sniffer.is_running())
 		{
 			if (available)
 			{
-				packet.address = address;
 				sniffer.send(&packet);
 			}
 
@@ -52,8 +49,6 @@ int main(int /*argc*/, char** /*argv*/)
 	// Simply drop every 10th packet, as a test
 	sniffer.on_packet([&](network::packet* packet)
 	{
-		address.IfIdx = packet->address.IfIdx;
-		address.SubIfIdx = packet->address.SubIfIdx;
 		available = true;
 	});
 

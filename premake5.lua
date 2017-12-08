@@ -1,10 +1,10 @@
 depsBasePath = "./deps"
 
-require "premake/divert"
+require "premake/npcap"
 
-divert.setup
+npcap.setup
 {
-	source = path.join(depsBasePath, "divert"),
+	source = path.join(depsBasePath, "npcap"),
 }
 
 workspace "harpoon"
@@ -85,7 +85,7 @@ workspace "harpoon"
 			}
 		configuration {}
 		
-		divert.import()
+		npcap.import()
 		
 	group "External dependencies"
-		divert.project()
+		npcap.project()

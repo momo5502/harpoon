@@ -47,7 +47,3 @@ using namespace std::literals;
 
 // Resources
 #define IDI_ICON            102
-
-#define WINDIVERT_DLL           300
-#define WINDIVERT_DRIVER_x86    301
-#define WINDIVERT_DRIVER_x64    302

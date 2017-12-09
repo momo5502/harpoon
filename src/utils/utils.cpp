@@ -12,16 +12,4 @@ namespace utils
 
 		SetCurrentDirectory(exeName);
 	}
-
-	std::string load_resource(int resId)
-	{
-		nt::module module;
-		HRSRC res = FindResource(module.get_handle(), MAKEINTRESOURCE(resId), RT_RCDATA);
-		if (!res) return "";
-
-		HGLOBAL handle = LoadResource(nullptr, res);
-		if (!handle) return "";
-
-		return std::string(LPSTR(LockResource(handle)), SizeofResource(nullptr, res));
-	}
 }

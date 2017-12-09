@@ -1,4 +1,5 @@
-#pragma once
+// Obsolete according to gcc
+//#pragma once
 
 #define STD_INCLUDED
 
@@ -61,11 +62,16 @@ typedef char* LPSTR;
 
 #include <string>
 #include <mutex>
+#include <vector>
+#include <functional>
 #include <fstream>
 
+#ifdef _POSIX
+#include <libnet.h>
+#else
 #include <../win32/libnet.h>
+#endif
 
-#include "utils/nt.hpp"
 #include "utils/utils.hpp"
 #include "utils/logger.hpp"
 #include "utils/memory.hpp"

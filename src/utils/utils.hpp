@@ -56,5 +56,4 @@ namespace utils
 	}
 
 	void set_environment();
-	std::string load_resource(int resId);
 }

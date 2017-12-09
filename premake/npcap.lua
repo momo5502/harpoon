@@ -13,22 +13,26 @@ end
 function npcap.import()
 	if not npcap.settings then error("You need to call npcap.setup first") end
 
-	filter "architecture:x86"
+	filter "platforms:Win32"
 		libdirs { path.join(npcap.settings.source, "Lib") }
 		
-	filter "architecture:x64"
+	filter "platforms:Win64"
 		libdirs { path.join(npcap.settings.source, "Lib/x64") }
 	filter {}
 	
-	links { "wpcap", "Packet" }
+	filter "platforms:Win*"
+		links { "wpcap", "Packet" }
+	filter {}
 	npcap.includes()
 end
 
 function npcap.includes()
 	if not npcap.settings then error("You need to call npcap.setup first") end
 
-	includedirs { path.join(npcap.settings.source, "Include") }
-	defines(npcap.settings.defines)
+	filter "platforms:Win*"
+		includedirs { path.join(npcap.settings.source, "Include") }
+		defines(npcap.settings.defines)
+	filter {}
 end
 
 function npcap.project()

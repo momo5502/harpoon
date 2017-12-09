@@ -47,9 +47,20 @@ function libnet.project()
 			path.join(libnet.settings.source, "libnet/src/libnet_link_pf.c"),
 			path.join(libnet.settings.source, "libnet/src/libnet_link_bpf.c"),
 			path.join(libnet.settings.source, "libnet/src/libnet_link_dlpi.c"),
-			path.join(libnet.settings.source, "libnet/src/libnet_link_linux.c"),
 			path.join(libnet.settings.source, "libnet/src/libnet_link_none.c"),
 		}
+		
+		filter "platforms:Win*"
+			removefiles
+			{
+				path.join(libnet.settings.source, "libnet/src/libnet_link_linux.c"),
+			}
+		filter "platforms:not Win*"
+			removefiles
+			{
+				path.join(libnet.settings.source, "libnet/src/libnet_link_win32.c"),
+			}
+		filter {}
 		
 		-- not our code, ignore POSIX usage warnings for now
 		warnings "Off"

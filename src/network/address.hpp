@@ -11,7 +11,8 @@ namespace network
 
 		void set_ipv4(in_addr addr);
 		void set_port(unsigned short port);
-		unsigned short getPort();
+		unsigned short get_port();
+		unsigned char* get_ipv4_bytes();
 
 		sockaddr* get_addr();
 		sockaddr_in* get_in_addr();

@@ -68,7 +68,7 @@ workspace "harpoon"
 		
 		linkoptions {
 			"/LARGEADDRESSAWARE",
-			"/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
+			--"/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
 		}
 
 		-- fix vpaths for protobuf sources

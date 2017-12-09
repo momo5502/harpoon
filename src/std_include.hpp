@@ -9,6 +9,8 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 
 #include <windows.h>
@@ -21,6 +23,42 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "ntdll.lib")
 
+#elif defined(_LINUX) || defined(_MACOSX)
+
+#define _POSIX
+
+#include <stdio.h>
+#include <stdarg.h>
+#include <signal.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+
+typedef void* PVOID;
+typedef unsigned short WORD;
+typedef unsigned long DWORD, ULONG;
+typedef unsigned char BYTE;
+typedef bool BOOL;
+typedef unsigned int* PUINT32;
+typedef int INT;
+typedef unsigned int UINT, SOCKET;
+typedef unsigned long long UINT64;
+typedef char* LPSTR;
+
+#define ARRAYSIZE(x) (sizeof(x) / sizeof(x[0]))
+
+#define TRUE true
+#define FALSE false
+
+#define SOCKET_ERROR -1
+
+#define ZeroMemory(src, size) memset(src, 0, size)
+
+#endif
+
 #include <string>
 #include <mutex>
 #include <fstream>
@@ -29,6 +67,7 @@
 
 #include "utils/nt.hpp"
 #include "utils/utils.hpp"
+#include "utils/logger.hpp"
 #include "utils/memory.hpp"
 #include "utils/signal_handler.hpp"
 

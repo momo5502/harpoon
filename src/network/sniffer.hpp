@@ -1,5 +1,8 @@
 #pragma once
 
+#define ARP_REQUEST 1   /* ARP Request             */
+#define ARP_REPLY 2     /* ARP Reply               */
+
 namespace network
 {
 	class sniffer;
@@ -9,12 +12,8 @@ namespace network
 	public:
 		sniffer* sniffer;
 
-		network::address source;
-		network::address target;
-
-		std::string_view data;
-
-		bool drop;
+		const struct pcap_pkthdr* pkthdr;
+		const u_char* data;
 	};
 
 	class sniffer
@@ -25,18 +24,26 @@ namespace network
 		sniffer();
 		~sniffer();
 
-		bool send(network::packet* packet);
+		bool create_arp_packet(network::address source_ip, network::address dest_ip);
+
+		bool send();
 		void on_packet(packet_callback callback);
 
 		void run();
 		void stop();
 		bool is_running();
 
-	private:
-		HANDLE handle;
-		packet_callback callback;
-		utils::nt::module divert;
+		libnet_t* get_handle();
 
+	private:
+		pcap_t* descr;
+		libnet_t* handle;
+		char errbuf[LIBNET_ERRBUF_SIZE];
+
+		packet_callback callback;
 		bool stopped;
+
+		void process_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
+		static void forward_packet(u_char* s, const struct pcap_pkthdr* pkthdr, const u_char* packet);
 	};
 }

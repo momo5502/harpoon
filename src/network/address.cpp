@@ -35,16 +35,21 @@ namespace network
 		this->sock_address.sin_port = htons(port);
 	}
 
-	unsigned short address::getPort()
+	unsigned short address::get_port()
 	{
 		return ntohs(this->sock_address.sin_port);
+	}
+
+	unsigned char* address::get_ipv4_bytes()
+	{
+		return &this->sock_address.sin_addr.S_un.S_un_b.s_b1;
 	}
 
 	std::string address::to_string()
 	{
 		char buffer[MAX_PATH] = { 0 };
 		inet_ntop(this->sock_address.sin_family, &this->sock_address.sin_addr, buffer, sizeof(buffer));
-		_snprintf_s(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), sizeof(buffer) - strlen(buffer), "%hu", this->getPort());
+		_snprintf_s(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), sizeof(buffer) - strlen(buffer), "%hu", this->get_port());
 		return buffer;
 	}
 
@@ -98,7 +103,7 @@ namespace network
 		addrinfo *result = nullptr;
 		if (!getaddrinfo(hostname.data(), nullptr, nullptr, &result))
 		{
-			unsigned short port = this->getPort();
+			unsigned short port = this->get_port();
 			std::memcpy(&this->sock_address, result->ai_addr, sizeof(this->sock_address));
 			this->set_port(port);
 

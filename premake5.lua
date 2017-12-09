@@ -1,10 +1,15 @@
 depsBasePath = "./deps"
 
 require "premake/npcap"
+require "premake/libnet"
 
 npcap.setup
 {
 	source = path.join(depsBasePath, "npcap"),
+}
+libnet.setup
+{
+	source = path.join(depsBasePath, "libnet"),
 }
 
 workspace "harpoon"
@@ -86,6 +91,8 @@ workspace "harpoon"
 		configuration {}
 		
 		npcap.import()
+		libnet.import()
 		
 	group "External dependencies"
 		npcap.project()
+		libnet.project()

@@ -16,36 +16,36 @@ libnet.setup
 	source = path.join(depsBasePath, "libnet"),
 }
 
+-- cppdialect but with a fix for GCC for C++17
+function cppdialect_fixed(dialect)
+	if dialect == "C++17" then
+		filter "toolset:gcc*"
+			buildoptions {
+				"-std=c++17"
+			}
+		filter "toolset:msc*"
+			buildoptions {
+				"/std:c++latest"
+			}
+		filter {}
+	else
+		cppdialect(dialect)
+	end
+end
+
 workspace "harpoon"
-	location "./build"
-	objdir "%{wks.location}/obj"
-	targetdir "%{wks.location}/bin/%{cfg.architecture}/%{cfg.buildcfg}"
-	buildlog "%{wks.location}/obj/%{cfg.architecture}/%{cfg.buildcfg}/%{prj.name}/%{prj.name}.log"
 	configurations { "Debug", "Release" }
-	platforms { "x86", "x64" }
-	
-	buildoptions { "/std:c++latest", "/utf-8", "/Zm200" }
-	systemversion "10.0.15063.0"
+	platforms { "Win32", "Win64", "WinARM" }
 
-	flags { "StaticRuntime", "NoIncrementalLink", "NoEditAndContinue", "NoMinimalRebuild", "MultiProcessorCompile", "No64BitChecks" }
-
-	configuration "windows"
-		defines { "_WINDOWS", "WIN32" }
-
-	configuration "Release*"
-		defines { "NDEBUG" }
-		optimize "On"
-
-	configuration "Debug*"
-		defines { "DEBUG", "_DEBUG" }
-		optimize "Debug"
-		symbols "On"
+	filter "action:not vs*"
+		platforms { "Linux32", "Linux64", "LinuxARM", "MacOSX32", "MacOSX64" }
+	filter {}
 		
 	project "harpoon"
 		kind "ConsoleApp"
 		language "C++"
+		cppdialect_fixed "C++17"
 		files {
-			"./src/**.rc",
 			"./src/**.hpp",
 			"./src/**.cpp",
 		}
@@ -54,38 +54,35 @@ workspace "harpoon"
 			"./src",
 			"./src",
 		}
-		resincludedirs {
-			"$(ProjectDir)src" -- fix for VS IDE
-		}
+
+		filter "system:windows"
+			files {
+				"./src/node/**.rc",
+			}
+			resincludedirs {
+				"$(ProjectDir)src" -- fix for VS IDE
+			}
+			links {
+				"ws2_32",
+				"shell32",
+				"ntdll",
+			}
+		filter {}
 		
-		filter "platforms:x64"
-			defines { "X64" }
+		filter "action:vs*"
+			linkoptions {
+				"/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
+			}
 		filter {}
 
 		-- Pre-compiled header
 		pchheader "std_include.hpp" -- must be exactly same as used in #include directives
 		pchsource "src/std_include.cpp" -- real path
-		
-		linkoptions {
-			"/LARGEADDRESSAWARE",
-			--"/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
-		}
-
-		-- fix vpaths for protobuf sources
-		vpaths
-		{
-			["*"] = { "./src/**" },
-		}
 
 		-- Specific configurations
 		flags { "UndefinedIdentifiers" }
 		warnings "Extra"
-
-		if symbols ~= nil then
-			symbols "On"
-		else
-			flags { "Symbols" }
-		end
+		symbols "On"
 
 		configuration "Release*"
 			flags {
@@ -100,3 +97,64 @@ workspace "harpoon"
 	group "External dependencies"
 		npcap.project()
 		libnet.project()
+
+workspace "*"
+	location "./build"
+	objdir "%{wks.location}/obj"
+	targetdir "%{wks.location}/bin/%{cfg.platform}/%{cfg.buildcfg}"
+	buildlog "%{wks.location}/obj/%{cfg.architecture}/%{cfg.buildcfg}/%{prj.name}/%{prj.name}.log"
+
+	largeaddressaware "on"
+	
+	if _OPTIONS["toolset"] then
+		toolset(_OPTIONS["toolset"])
+	end
+
+	filter "toolset:msc*"
+		buildoptions { "/utf-8", "/Zm200" }
+
+	filter "toolset:gcc*"
+		links {
+			"stdc++fs"
+		}
+	
+	filter "platforms:*32"
+		architecture "x86"
+	
+	filter "platforms:*64"
+		architecture "x86_64"
+	
+	filter "platforms:*ARM"
+		architecture "arm"
+	
+	filter "platforms:Win*"
+		system "windows"
+		defines { "_WINDOWS" }
+	
+	filter "platforms:linux*"
+		system "linux"
+		defines { "_LINUX" }
+	
+	filter "platforms:macos*"
+		system "macosx"
+		defines { "_MACOSX" }
+
+	filter {}
+
+	flags {
+		"StaticRuntime",
+		"NoIncrementalLink",
+		"NoMinimalRebuild",
+		"MultiProcessorCompile",
+		"No64BitChecks",
+	}
+	editandcontinue "Off"
+
+	configuration "Release*"
+		defines { "NDEBUG" }
+		optimize "On"
+
+	configuration "Debug*"
+		defines { "DEBUG", "_DEBUG" }
+		optimize "Debug"
+		symbols "On"

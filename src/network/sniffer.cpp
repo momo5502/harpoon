@@ -15,6 +15,73 @@ namespace network
 		return this->handle && !this->stopped;
 	}
 
+	bool sniffer::forward_packets(bool forward)
+	{
+		utils::logger::info("%s packet forwarding", forward ? "Enabling" : "Disabling");
+
+#ifdef _WIN32
+		// 'Routing and Remote Access' service is responsible for forwarding packets
+		// Stopping that service disables forwarding, enabling it enables it, obv.
+
+		bool result = false;
+		SC_HANDLE sc_handle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+		if (sc_handle)
+		{
+			SC_HANDLE ras = OpenServiceA(sc_handle, "RemoteAccess", SC_MANAGER_ALL_ACCESS);
+			if (ras)
+			{
+				SERVICE_STATUS status;
+				if (QueryServiceStatus(ras, &status) != FALSE)
+				{
+					// Wait as long as the service is in a pending state
+					auto wait_for_service = [&]()
+					{
+						while (QueryServiceStatus(ras, &status) != FALSE)
+						{
+							if (status.dwCurrentState == SERVICE_PAUSED) break;
+							if (status.dwCurrentState == SERVICE_RUNNING) break;
+							if (status.dwCurrentState == SERVICE_STOPPED) break;
+
+							std::this_thread::sleep_for(100ms);
+						}
+					};
+
+					wait_for_service();
+					ChangeServiceConfig(ras, status.dwServiceType, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+					wait_for_service();
+
+					if (forward)
+					{
+						if (status.dwCurrentState == SERVICE_PAUSED)
+						{
+							result = ControlService(ras, SERVICE_CONTROL_CONTINUE, &status) != FALSE;
+						}
+						else
+						{
+							result = StartService(ras, 0, nullptr) != FALSE;
+						}
+					}
+					else
+					{
+						result = ControlService(ras, SERVICE_CONTROL_STOP, &status) != FALSE;
+					}
+				}
+				CloseServiceHandle(ras);
+			}
+
+			CloseServiceHandle(sc_handle);
+		}
+
+		return result;
+
+#elif _POSIX
+		int state = forward;
+		return sysctlbyname("net.inet.ip.forwarding", NULL, NULL, &state, sizeof(state)) != -1;
+#else
+		#error "Unsupported architecture"
+#endif
+	}
+
 	std::string sniffer::get_device_uuid(std::string device)
 	{
 		auto pos = device.find_last_of("_");
@@ -56,9 +123,11 @@ namespace network
 		}
 
 		return network::address{ "0.0.0.0" };
-#else
+#elif _POSIX
 		// Use getifaddr()
 		#error "Not supported yet!"
+#else
+		#error "Unsupported architecture"
 #endif
 	}
 

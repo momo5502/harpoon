@@ -33,6 +33,8 @@ namespace network
 		void stop();
 		bool is_running();
 
+		bool forward_packets(bool forward);
+
 		network::address get_gateway_address();
 
 		libnet_t* get_handle();

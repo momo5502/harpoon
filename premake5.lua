@@ -66,6 +66,7 @@ workspace "harpoon"
 				"ws2_32",
 				"shell32",
 				"ntdll",
+				"iphlpapi"
 			}
 		filter {}
 		

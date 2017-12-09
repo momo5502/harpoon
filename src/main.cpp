@@ -22,9 +22,9 @@ int main(int /*argc*/, char** /*argv*/)
 
 	std::thread worker([&]()
 	{
-		sniffer.create_arp_packet(network::address{ "192.168.0.1" }, network::address{ "192.168.0.158" });
+		sniffer.create_arp_packet();
 
-		utils::logger::info("Starting arp poisoning");
+		utils::logger::info("Starting ARP poisoning");
 
 		while (sniffer.is_running())
 		{

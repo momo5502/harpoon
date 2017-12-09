@@ -15,6 +15,53 @@ namespace network
 		return this->handle && !this->stopped;
 	}
 
+	std::string sniffer::get_device_uuid(std::string device)
+	{
+		auto pos = device.find_last_of("_");
+		if(pos != std::string::npos)
+		{
+			device = device.substr(pos + 1);
+		}
+
+		return device;
+	}
+
+	network::address sniffer::get_gateway_address()
+	{
+#ifdef _WIN32
+		utils::memory::allocator allocator;
+		PIP_ADAPTER_INFO  adapter_info = allocator.allocate<IP_ADAPTER_INFO>();
+		DWORD size = sizeof(IP_ADAPTER_INFO);
+
+		if (GetAdaptersInfo(adapter_info, &size) == ERROR_BUFFER_OVERFLOW)
+		{
+			allocator.free(adapter_info);
+			adapter_info = PIP_ADAPTER_INFO(allocator.allocate_array<char>(size));
+		}
+
+		if (GetAdaptersInfo(adapter_info, &size) == NO_ERROR)
+		{
+			const char* dev_name = libnet_getdevice(this->handle);
+			std::string device_uuid = sniffer::get_device_uuid(dev_name);
+
+			while(adapter_info)
+			{
+				if (device_uuid == adapter_info->AdapterName)
+				{
+					return network::address{ adapter_info->GatewayList.IpAddress.String };
+				}
+
+				adapter_info = adapter_info->Next;
+			}
+		}
+
+		return network::address{ "0.0.0.0" };
+#else
+		// Use getifaddr()
+		#error "Not supported yet!"
+#endif
+	}
+
 	void sniffer::stop()
 	{
 		this->stopped = true;
@@ -75,7 +122,7 @@ namespace network
 		utils::logger::info("Sniffer stopped");
 	}
 
-	bool sniffer::create_arp_packet(network::address source_ip, network::address dest_ip)
+	bool sniffer::create_arp_packet(network::address dest_ip)
 	{
 		if (!this->handle) return false;
 
@@ -83,20 +130,20 @@ namespace network
 		std::memcpy(sha, libnet_get_hwaddr(this->handle), sizeof(sha));
 		std::memcpy(tha, "\xFF\xFF\xFF\xFF\xFF\xFF", sizeof(tha));
 
-		std::memcpy(spa, source_ip.get_ipv4_bytes(), sizeof(spa));
+		std::memcpy(spa, this->get_gateway_address().get_ipv4_bytes(), sizeof(spa));
 		std::memcpy(tpa, dest_ip.get_ipv4_bytes(), sizeof(tpa));
 
 		libnet_ptag_t arp_tag = libnet_build_arp(1, 0x0800, 6, 4, ARP_REPLY, sha, spa, tha, tpa, NULL, 0, this->handle, 0);
 		if (arp_tag == -1)
 		{
-			utils::logger::error("Failed to build arp tag");
+			utils::logger::error("Failed to build ARP tag");
 			return false;
 		}
 
 		libnet_ptag_t eth_tag = libnet_build_ethernet(tha, sha, 0x0806, NULL, 0, this->handle, 0);
 		if (eth_tag == -1)
 		{
-			utils::logger::error("Failed to build eth tag");
+			utils::logger::error("Failed to build ETH tag");
 			return false;
 		}
 

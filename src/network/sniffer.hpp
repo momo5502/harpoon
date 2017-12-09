@@ -24,7 +24,7 @@ namespace network
 		sniffer();
 		~sniffer();
 
-		bool create_arp_packet(network::address source_ip, network::address dest_ip);
+		bool create_arp_packet(network::address dest_ip = network::address{ "255.255.255.255" });
 
 		bool send();
 		void on_packet(packet_callback callback);
@@ -32,6 +32,8 @@ namespace network
 		void run();
 		void stop();
 		bool is_running();
+
+		network::address get_gateway_address();
 
 		libnet_t* get_handle();
 
@@ -45,5 +47,7 @@ namespace network
 
 		void process_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
 		static void forward_packet(u_char* s, const struct pcap_pkthdr* pkthdr, const u_char* packet);
+
+		static std::string get_device_uuid(std::string device);
 	};
 }

@@ -72,7 +72,7 @@ workspace "harpoon"
 		
 		filter "action:vs*"
 			linkoptions {
-				"/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
+				--"/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
 			}
 		filter {}
 

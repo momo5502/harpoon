@@ -13,6 +13,17 @@ static utils::static_initializer $([]()
 	utils::logger::reset_color();
 });
 
+void print_fancy_ascii_header()
+{
+	utils::logger::set_color(COLOR_LOG_ERROR);
+	printf("  _   _\n"
+		" | | | | __ _ _ __ _ __   ___   ___  _ __\n"
+		" | |_| |/ _` | '__| '_ \\ / _ \\ / _ \\| '_ \\\n"
+		" |  _  | (_| | |  | |_) | (_) | (_) | | | |\n"
+		" |_| |_|\\__,_|_|  | .__/ \\___/ \\___/|_| |_|\n"
+		"                  |_|\n\n");
+}
+
 int main(int /*argc*/, char** /*argv*/)
 {
 	utils::set_environment();
@@ -23,6 +34,8 @@ int main(int /*argc*/, char** /*argv*/)
 #else
 	utils::logger::set_verbose(false);
 #endif
+
+	print_fancy_ascii_header();
 
 	network::sniffer sniffer;
 	utils::signal_handler sig_handler([&sniffer]()

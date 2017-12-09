@@ -1,5 +1,19 @@
 #pragma once
 
+#ifdef _WIN32
+#define COLOR_LOG_INFO 11//15
+#define COLOR_LOG_SUCCESS 10
+#define COLOR_LOG_WARN 14
+#define COLOR_LOG_ERROR 12
+#define COLOR_LOG_DEBUG 15//7
+#elif defined(_POSIX)
+#define COLOR_LOG_INFO "\033[1;36;24;27m"//"\033[1;37;24;27m"
+#define COLOR_LOG_SUCCESS "\033[1;92;24;27m"
+#define COLOR_LOG_WARN "\033[1;33;24;27m"
+#define COLOR_LOG_ERROR "\033[1;31;24;27m"
+#define COLOR_LOG_DEBUG "\033[0m\033[1m"
+#endif
+
 namespace utils
 {
 	class logger

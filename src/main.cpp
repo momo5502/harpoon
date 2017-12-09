@@ -3,6 +3,16 @@
 #include "network/address.hpp"
 #include "network/sniffer.hpp"
 
+static utils::static_initializer $([]()
+{
+	// Before application initialization
+	utils::logger::reset_color();
+}, []()
+{
+	// After application termination
+	utils::logger::reset_color();
+});
+
 int main(int /*argc*/, char** /*argv*/)
 {
 	utils::set_environment();

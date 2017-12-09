@@ -2,6 +2,24 @@
 
 namespace utils
 {
+	class static_initializer
+	{
+	public:
+		static_initializer(std::function<void()> init, std::function<void()> _uninit = std::function<void()>())
+		{
+			if (init) init();
+			this->uninit = _uninit;
+		}
+
+		~static_initializer()
+		{
+			if (this->uninit) this->uninit();
+		}
+
+	private:
+		std::function<void()> uninit;
+	};
+
 	class buffer : public std::string
 	{
 	public:

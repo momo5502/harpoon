@@ -25,6 +25,8 @@
 #include <mutex>
 #include <fstream>
 
+#include <../win32/libnet.h>
+
 #include "utils/nt.hpp"
 #include "utils/utils.hpp"
 #include "utils/memory.hpp"

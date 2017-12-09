@@ -18,7 +18,7 @@ namespace network
 
 	void sniffer::run()
 	{
-
+		libnet_init(LIBNET_LINK, nullptr, nullptr);
 	}
 
 	bool sniffer::send(network::packet* packet)

@@ -44,7 +44,7 @@ namespace network
 	{
 		char buffer[MAX_PATH] = { 0 };
 		inet_ntop(this->sock_address.sin_family, &this->sock_address.sin_addr, buffer, sizeof(buffer));
-		snprintf(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), "%hu", this->getPort());
+		_snprintf_s(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), sizeof(buffer) - strlen(buffer), "%hu", this->getPort());
 		return buffer;
 	}
 

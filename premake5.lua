@@ -9,6 +9,10 @@ npcap.setup
 }
 libnet.setup
 {
+	defines = {
+		"BPF_MAJOR_VERSION",
+		"WIN32_ALTERNATE_INCLUDES"
+	},
 	source = path.join(depsBasePath, "libnet"),
 }
 

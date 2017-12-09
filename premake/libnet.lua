@@ -34,11 +34,6 @@ function libnet.project()
 
 		libnet.includes()
 		npcap.includes()
-		defines
-		{
-			"BPF_MAJOR_VERSION",
-			"WIN32_ALTERNATE_INCLUDES"
-		}
 		files
 		{
 			path.join(libnet.settings.source, "libnet/src/*.c"),

@@ -38,7 +38,7 @@ int main(int /*argc*/, char** /*argv*/)
 	print_fancy_ascii_header();
 
 	network::sniffer sniffer;
-	sniffer.forward_packets(true);
+	sniffer.forward_packets(false);
 
 	utils::signal_handler sig_handler([&sniffer]()
 	{

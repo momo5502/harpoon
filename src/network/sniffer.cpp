@@ -66,6 +66,7 @@ namespace network
 						result = ControlService(ras, SERVICE_CONTROL_STOP, &status) != FALSE;
 					}
 				}
+
 				CloseServiceHandle(ras);
 			}
 
@@ -84,10 +85,12 @@ namespace network
 
 	std::string sniffer::get_device_uuid(std::string device)
 	{
-		auto pos = device.find_last_of("_");
-		if(pos != std::string::npos)
+		static std::regex device_regex("\\\\[dD][eE][vV][iI][cC][eE]\\\\.*_(\\{.*\\})");
+
+		std::smatch match;
+		if (std::regex_search(device, match, device_regex) && match.size() >= 2)
 		{
-			device = device.substr(pos + 1);
+			device = match[1];
 		}
 
 		return device;

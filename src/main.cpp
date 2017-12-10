@@ -3,6 +3,8 @@
 #include "network/address.hpp"
 #include "network/sniffer.hpp"
 
+#include "ui/window.hpp"
+
 static utils::static_initializer $([]()
 {
 	// Before application initialization
@@ -66,6 +68,7 @@ int main(int /*argc*/, char** /*argv*/)
 	{
 
 	});*/
+	ui::window window;
 
 	sniffer.run();
 

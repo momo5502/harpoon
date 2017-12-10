@@ -2,6 +2,7 @@ depsBasePath = "./deps"
 
 require "premake/npcap"
 require "premake/libnet"
+require "premake/nuklear"
 
 npcap.setup
 {
@@ -14,6 +15,10 @@ libnet.setup
 		"WIN32_ALTERNATE_INCLUDES"
 	},
 	source = path.join(depsBasePath, "libnet"),
+}
+nuklear.setup
+{
+	source = path.join(depsBasePath, "nuklear"),
 }
 
 -- cppdialect but with a fix for GCC for C++17
@@ -66,7 +71,9 @@ workspace "harpoon"
 				"ws2_32",
 				"shell32",
 				"ntdll",
-				"iphlpapi"
+				"iphlpapi",
+				"d3d11",
+				"dxguid",
 			}
 		filter {}
 		
@@ -94,10 +101,12 @@ workspace "harpoon"
 		
 		npcap.import()
 		libnet.import()
+		nuklear.import()
 		
 	group "External dependencies"
 		npcap.project()
 		libnet.project()
+		nuklear.project()
 
 workspace "*"
 	location "./build"

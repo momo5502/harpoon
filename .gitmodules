@@ -1,3 +1,6 @@
 [submodule "deps/libnet"]
 	path = deps/libnet
 	url = https://github.com/momo5502/libnet.git
+[submodule "deps/nuklear"]
+	path = deps/nuklear
+	url = https://github.com/vurtun/nuklear.git

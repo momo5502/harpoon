@@ -87,9 +87,10 @@ namespace ui
 		{
 			/* if hardware device fails, then try WARP high-performance
 			software rasterizer, this is useful for RDP sessions */
-			assert(SUCCEEDED(D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_WARP,
+			BOOL s = SUCCEEDED(D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_WARP,
 				NULL, 0, NULL, 0, D3D11_SDK_VERSION, &swap_chain_desc,
-				&this->swap_chain, &this->device, &feature_level, &this->context)));
+				&this->swap_chain, &this->device, &feature_level, &this->context));
+			assert(s); s;
 		}
 
 		this->resize(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -131,14 +132,14 @@ namespace ui
 
 			if (nk_group_begin(this->ctx, "column1", NK_WINDOW_BORDER))
 			{
-				nk_layout_row_begin(ctx, NK_STATIC, 0, 2);
+				nk_layout_row_begin(this->ctx, NK_STATIC, 0, 2);
 				{
 					// Make sure to store a copy of all clients, so that the 'enabled' ptr passed to nuklear
 					// stays alive until the next frame (due to the stored shared_ptrs)
 					this->client_copy = sniffer->get_clients();
 					for (auto& client : this->client_copy)
 					{
-						nk_layout_row_push(ctx, 100);
+						nk_layout_row_push(this->ctx, 100);
 						nk_label(this->ctx, client->to_string().data(), NK_TEXT_LEFT);
 
 						nk_checkbox_label(this->ctx, "Poison", &client->enabled);
@@ -167,7 +168,7 @@ namespace ui
 
 					this->forwardPackets = true;
 				}
-				if (nk_option_label(ctx, "Drop Packets", !this->forwardPackets))
+				if (nk_option_label(this->ctx, "Drop Packets", !this->forwardPackets))
 				{
 					if (this->forwardPackets)
 					{
@@ -176,6 +177,12 @@ namespace ui
 
 					this->forwardPackets = false;
 				}
+
+				nk_layout_row_dynamic(this->ctx, 0, 1);
+
+				char str[100];
+				_snprintf_s(str, sizeof(str), "Sniffed packets: %lld", this->sniffer->get_sniffed_packets());
+				nk_label(ctx, str, NK_TEXT_LEFT);
 
 				nk_group_end(this->ctx);
 			}

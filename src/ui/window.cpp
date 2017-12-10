@@ -7,6 +7,7 @@
 #pragma warning(disable: 4127)
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4456)
+#pragma warning(disable: 4701)
 #pragma warning(disable: 4996)
 
 #define NK_INCLUDE_FIXED_TYPES
@@ -44,14 +45,6 @@ namespace ui
 
 	void window::init_d3d11()
 	{
-		RECT rect = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
-		DWORD style = WS_OVERLAPPEDWINDOW & ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
-		DWORD exstyle = WS_EX_APPWINDOW;
-
-		HRESULT hr;
-		D3D_FEATURE_LEVEL feature_level;
-		DXGI_SWAP_CHAIN_DESC swap_chain_desc;
-
 		ZeroMemory(&this->wc, sizeof(this->wc));
 		this->wc.style = CS_DBLCLKS;
 		this->wc.lpfnWndProc = window::window_proc;
@@ -61,6 +54,9 @@ namespace ui
 		this->wc.lpszClassName = L"HarpoonWindowClass";
 		RegisterClassW(&wc);
 
+		DWORD exstyle = WS_EX_APPWINDOW;
+		DWORD style = WS_OVERLAPPEDWINDOW & ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
+		RECT rect = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
 		AdjustWindowRectEx(&rect, style, FALSE, exstyle);
 
 		this->hwnd = CreateWindowExW(exstyle, wc.lpszClassName, L"Harpoon",
@@ -70,6 +66,7 @@ namespace ui
 
 		SetWindowLongPtrA(this->hwnd, GWLP_USERDATA, LONG_PTR(this));
 
+		DXGI_SWAP_CHAIN_DESC swap_chain_desc;
 		ZeroMemory(&swap_chain_desc, sizeof(swap_chain_desc));
 		swap_chain_desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swap_chain_desc.BufferDesc.RefreshRate.Numerator = 60;
@@ -83,16 +80,16 @@ namespace ui
 		swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		swap_chain_desc.Flags = 0;
 
+		D3D_FEATURE_LEVEL feature_level;
 		if (FAILED(D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE,
 			NULL, 0, NULL, 0, D3D11_SDK_VERSION, &swap_chain_desc,
 			&this->swap_chain, &this->device, &feature_level, &this->context)))
 		{
 			/* if hardware device fails, then try WARP high-performance
 			software rasterizer, this is useful for RDP sessions */
-			hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_WARP,
+			assert(SUCCEEDED(D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_WARP,
 				NULL, 0, NULL, 0, D3D11_SDK_VERSION, &swap_chain_desc,
-				&this->swap_chain, &this->device, &feature_level, &this->context);
-			assert(SUCCEEDED(hr));
+				&this->swap_chain, &this->device, &feature_level, &this->context)));
 		}
 
 		this->resize(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -213,14 +210,10 @@ namespace ui
 
 	void window::resize(int width, int height)
 	{
-		ID3D11Texture2D* back_buffer;
-		D3D11_RENDER_TARGET_VIEW_DESC desc;
-		HRESULT hr;
-
 		if (this->rt_view) ID3D11RenderTargetView_Release(this->rt_view);
 		ID3D11DeviceContext_OMSetRenderTargets(this->context, 0, NULL, NULL);
 
-		hr = IDXGISwapChain_ResizeBuffers(this->swap_chain, 0, width, height, DXGI_FORMAT_UNKNOWN, 0);
+		HRESULT hr = IDXGISwapChain_ResizeBuffers(this->swap_chain, 0, width, height, DXGI_FORMAT_UNKNOWN, 0);
 		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == DXGI_ERROR_DRIVER_INTERNAL_ERROR)
 		{
 			/* to recover from this, you'll need to recreate device and all the resources */
@@ -229,12 +222,17 @@ namespace ui
 		}
 		assert(SUCCEEDED(hr));
 
+		D3D11_RENDER_TARGET_VIEW_DESC desc;
 		ZeroMemory(&desc, sizeof(desc));
 		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 
-		assert(SUCCEEDED(IDXGISwapChain_GetBuffer(this->swap_chain, 0, IID_ID3D11Texture2D, reinterpret_cast<void**>(&back_buffer))));
-		assert(SUCCEEDED(ID3D11Device_CreateRenderTargetView(this->device, reinterpret_cast<ID3D11Resource *>(back_buffer), &desc, &this->rt_view)));
+		ID3D11Texture2D* back_buffer = nullptr;
+		hr = IDXGISwapChain_GetBuffer(this->swap_chain, 0, IID_ID3D11Texture2D, reinterpret_cast<void**>(&back_buffer));
+		assert(SUCCEEDED(hr));
+
+		hr = ID3D11Device_CreateRenderTargetView(this->device, reinterpret_cast<ID3D11Resource *>(back_buffer), &desc, &this->rt_view);
+		assert(SUCCEEDED(hr));
 
 		ID3D11Texture2D_Release(back_buffer);
 	}

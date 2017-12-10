@@ -1,4 +1,6 @@
 #include "std_include.hpp"
+#include "network/address.hpp"
+#include "network/sniffer.hpp"
 
 #pragma warning(push)
 #pragma warning(disable: 4067)
@@ -23,7 +25,7 @@
 #include "ui/window.hpp"
 
 #define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_HEIGHT 400
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_INDEX_BUFFER 128 * 1024
@@ -43,7 +45,7 @@ namespace ui
 	void window::init_d3d11()
 	{
 		RECT rect = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
-		DWORD style = WS_OVERLAPPEDWINDOW;
+		DWORD style = WS_OVERLAPPEDWINDOW & ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
 		DWORD exstyle = WS_EX_APPWINDOW;
 
 		HRESULT hr;
@@ -126,43 +128,40 @@ namespace ui
 
 	void window::nk_frame()
 	{
-		if (nk_begin(ctx, "Demo", nk_rect(50, 50, 230, 250), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
+		if (nk_begin(this->ctx, "Harpoon", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0))
 		{
-			enum { EASY, HARD };
-			static int op = EASY;
-			static int property = 20;
+			nk_layout_row_dynamic(this->ctx, WINDOW_HEIGHT - 18, 2); // wrapping row
 
-			nk_layout_row_static(ctx, 30, 80, 1);
-			if (nk_button_label(ctx, "button"))
+			if (nk_group_begin(this->ctx, "column1", NK_WINDOW_BORDER))
 			{
-				utils::logger::info("Button pressed\n");
+				nk_layout_row_begin(ctx, NK_STATIC, 0, 2);
+				{
+					for (auto& client : sniffer->get_clients())
+					{
+						nk_layout_row_push(ctx, 100);
+						nk_label(this->ctx, client.to_string().data(), NK_TEXT_LEFT);
+
+						nk_checkbox_label(this->ctx, "Target", &client.enabled);
+					}
+				}
+				nk_layout_row_end(this->ctx);
+
+				nk_group_end(this->ctx);
 			}
 
-			nk_layout_row_dynamic(ctx, 30, 2);
-			if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-			if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
-			nk_layout_row_dynamic(ctx, 22, 1);
-			nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
-
-			nk_layout_row_dynamic(ctx, 20, 1);
-			nk_label(ctx, "background:", NK_TEXT_LEFT);
-			nk_layout_row_dynamic(ctx, 25, 1);
-
-			auto background = nk_rgb(0, 0, 0);
-			if (nk_combo_begin_color(ctx, background, nk_vec2(nk_widget_width(ctx), 400)))
+			if (nk_group_begin(this->ctx, "column2", NK_WINDOW_BORDER))
 			{
-				nk_layout_row_dynamic(ctx, 120, 1);
-				background = nk_color_picker(ctx, background, NK_RGBA);
-				nk_layout_row_dynamic(ctx, 25, 1);
-				background.r = (nk_byte)nk_propertyi(ctx, "#R:", 0, background.r, 255, 1, 1);
-				background.g = (nk_byte)nk_propertyi(ctx, "#G:", 0, background.g, 255, 1, 1);
-				background.b = (nk_byte)nk_propertyi(ctx, "#B:", 0, background.b, 255, 1, 1);
-				background.a = (nk_byte)nk_propertyi(ctx, "#A:", 0, background.a, 255, 1, 1);
-				nk_combo_end(ctx);
+				nk_layout_row_dynamic(this->ctx, 0, 1);
+				if (nk_button_label(ctx, "Refresh"))
+				{
+					this->sniffer->scan_network();
+				}
+
+				nk_group_end(this->ctx);
 			}
 		}
 
-		nk_end(ctx);
+		nk_end(this->ctx);
 	}
 
 	void window::present()
@@ -278,7 +277,7 @@ namespace ui
 		this->running = false;
 	}
 
-	window::window() : running(true), swap_chain(nullptr), device(nullptr), context(nullptr), rt_view(nullptr), ctx(nullptr)
+	window::window(network::sniffer* _sniffer) : running(true), swap_chain(nullptr), device(nullptr), context(nullptr), rt_view(nullptr), ctx(nullptr), sniffer(_sniffer)
 	{
 		this->thread = std::thread(std::bind(&window::runner, this));
 	}

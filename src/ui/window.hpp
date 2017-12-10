@@ -9,13 +9,15 @@ namespace ui
 	class window
 	{
 	public:
-		window();
+		window(network::sniffer* sniffer);
 		~window();
 
 		bool is_running();
 		void stop();
 
 	private:
+		network::sniffer* sniffer;
+
 		bool running;
 		std::thread thread;
 

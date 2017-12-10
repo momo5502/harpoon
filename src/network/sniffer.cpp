@@ -5,6 +5,11 @@
 
 namespace network
 {
+	std::vector<client>& sniffer::get_clients()
+	{
+		return this->clients;
+	}
+
 	libnet_t* sniffer::get_handle()
 	{
 		return this->handle;
@@ -167,12 +172,103 @@ namespace network
 		_sniffer->process_packet(pkthdr, packet);
 	}
 
+	void sniffer::scan_network()
+	{
+		if (!this->handle || this->scanning) return;
+		if (this->scan_thread.joinable()) this->scan_thread.join();
+		this->scan_thread = std::thread(std::bind(&sniffer::scan_runner, this));
+	}
+
+	void sniffer::scan_runner()
+	{
+		if (!this->handle) return;
+		this->scanning = true;
+
+		network::address target = sniffer::get_gateway_address();
+
+		network::client client;
+		client.enabled = false;
+		client.hostname = "Everyone";
+		client.addr = network::address{ "255.255.255.255" };
+
+		auto oldClients = this->clients;
+
+		for (auto& oldClient : oldClients)
+		{
+			if (oldClient.addr == client.addr)
+			{
+				client.enabled = oldClient.enabled;
+				break;
+			}
+		}
+
+		this->clients.clear();
+		this->clients.push_back(client);
+
+		std::mutex mutex;
+		std::vector<std::thread> threads;
+
+		for (unsigned int i = 0; i < 256 && !this->stopped; ++i)
+		{
+			threads.push_back(std::thread([&oldClients, &mutex, i, target, this]()
+			{
+				network::address targetIp = target;
+				targetIp.get_ipv4_bytes()[3] = UCHAR(i);
+
+				network::client client;
+				client.enabled = false;
+
+				ULONG addr[4];
+				DWORD size = sizeof(addr);
+				if (SendARP(targetIp.get_ipv4(), INADDR_ANY, addr, &size) == NO_ERROR)
+				{
+					char hostname[260];
+					char service[260];
+
+					client.hostname.clear();
+					if (!getnameinfo(targetIp.get_addr(), sizeof(sockaddr_in), hostname, 260, service, 260, 0))
+					{
+						client.hostname = hostname;
+					}
+
+					client.addr = targetIp;
+
+					std::lock_guard<std::mutex> _(mutex);
+
+					for (auto& oldClient : oldClients)
+					{
+						if (oldClient.addr == client.addr)
+						{
+							client.enabled = oldClient.enabled;
+							break;
+						}
+					}
+
+					this->clients.push_back(client);
+				}
+			}));
+
+			if (i % 5 == 0) std::this_thread::sleep_for(100ms);
+		}
+
+		for (auto& t : threads)
+		{
+			if (t.joinable())
+			{
+				t.join();
+			}
+		}
+
+		this->scanning = false;
+	}
+
 	void sniffer::run()
 	{
 		if (!this->handle) return;
 
 		utils::logger::info("Initializing sniffer");
 
+		this->scan_network();
 		this->descr = pcap_open_live(libnet_getdevice(this->handle), 2048, 0, 512, this->errbuf);
 		if (!this->descr)
 		{
@@ -233,7 +329,7 @@ namespace network
 		this->callback = _callback;
 	}
 
-	sniffer::sniffer() : descr(nullptr), handle(nullptr), stopped(false)
+	sniffer::sniffer() : descr(nullptr), handle(nullptr), stopped(false), scanning(false)
 	{
 		utils::logger::info("Initializing libnet");
 
@@ -251,6 +347,7 @@ namespace network
 	sniffer::~sniffer()
 	{
 		this->stop();
+		if (this->scan_thread.joinable()) this->scan_thread.join();
 		utils::logger::info("Libnet closed");
 	}
 }

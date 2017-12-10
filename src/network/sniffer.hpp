@@ -16,6 +16,20 @@ namespace network
 		const u_char* data;
 	};
 
+	class client
+	{
+	public:
+		network::address addr;
+		std::string hostname;
+		int enabled;
+
+		std::string to_string()
+		{
+			if (!hostname.empty()) return hostname;
+			else return addr.to_string();
+		}
+	};
+
 	class sniffer
 	{
 	public:
@@ -39,6 +53,10 @@ namespace network
 
 		libnet_t* get_handle();
 
+		std::vector<client>& get_clients();
+
+		void scan_network();
+
 	private:
 		pcap_t* descr;
 		libnet_t* handle;
@@ -46,6 +64,12 @@ namespace network
 
 		packet_callback callback;
 		bool stopped;
+
+		std::atomic<bool> scanning;
+		std::vector<client> clients;
+		std::thread scan_thread;
+
+		void scan_runner();
 
 		void process_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
 		static void forward_packet(u_char* s, const struct pcap_pkthdr* pkthdr, const u_char* packet);

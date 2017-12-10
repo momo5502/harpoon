@@ -39,9 +39,10 @@ int main(int /*argc*/, char** /*argv*/)
 
 	print_fancy_ascii_header();
 
-	ui::window window;
 	network::sniffer sniffer;
-	sniffer.forward_packets(false);
+	ui::window window(&sniffer);
+
+	sniffer.forward_packets(true);
 
 	utils::signal_handler sig_handler([&sniffer]()
 	{
@@ -77,6 +78,6 @@ int main(int /*argc*/, char** /*argv*/)
 
 	if (worker.joinable()) worker.join();
 
-	sniffer.forward_packets(false);
+	sniffer.forward_packets(true);
 	return 0;
 }

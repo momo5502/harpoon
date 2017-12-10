@@ -40,6 +40,11 @@ namespace network
 		return ntohs(this->sock_address.sin_port);
 	}
 
+	unsigned long address::get_ipv4()
+	{
+		return this->sock_address.sin_addr.S_un.S_addr;
+	}
+
 	unsigned char* address::get_ipv4_bytes()
 	{
 		return &this->sock_address.sin_addr.S_un.S_un_b.s_b1;
@@ -49,7 +54,7 @@ namespace network
 	{
 		char buffer[MAX_PATH] = { 0 };
 		inet_ntop(this->sock_address.sin_family, &this->sock_address.sin_addr, buffer, sizeof(buffer));
-		_snprintf_s(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), sizeof(buffer) - strlen(buffer), "%hu", this->get_port());
+		if(this->get_port()) _snprintf_s(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), sizeof(buffer) - strlen(buffer), ":%hu", this->get_port());
 		return buffer;
 	}
 

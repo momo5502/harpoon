@@ -65,6 +65,7 @@ typedef char* LPSTR;
 #include <functional>
 #include <fstream>
 #include <regex>
+#include <atomic>
 
 #ifdef _POSIX
 #include <libnet.h>

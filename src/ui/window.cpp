@@ -260,7 +260,8 @@ namespace ui
 		nk_font_atlas *atlas;
 		nk_d3d11_font_stash_begin(&atlas);
 
-		nk_font *droid = nk_font_atlas_add_from_file(atlas, "DroidSans.ttf", 13, 0);
+		std::string font = utils::load_resource(DROID_SANS_FONT);
+		nk_font *droid = nk_font_atlas_add_from_memory(atlas, const_cast<char*>(font.data()), font.size(), 13, 0);
 		nk_d3d11_font_stash_end();
 		nk_style_set_font(ctx, &droid->handle);
 

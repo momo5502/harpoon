@@ -94,3 +94,4 @@ using namespace std::literals;
 
 // Resources
 #define IDI_ICON            102
+#define DROID_SANS_FONT     300

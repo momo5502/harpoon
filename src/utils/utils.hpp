@@ -74,4 +74,8 @@ namespace utils
 	}
 
 	void set_environment();
+
+#ifdef _WIN32
+	std::string load_resource(int resId);
+#endif
 }

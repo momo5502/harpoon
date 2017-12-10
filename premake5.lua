@@ -62,10 +62,7 @@ workspace "harpoon"
 
 		filter "system:windows"
 			files {
-				"./src/node/**.rc",
-			}
-			resincludedirs {
-				"$(ProjectDir)src" -- fix for VS IDE
+				"./src/**.rc",
 			}
 			links {
 				"ws2_32",
@@ -74,6 +71,14 @@ workspace "harpoon"
 				"iphlpapi",
 				"d3d11",
 				"dxguid",
+			}
+		filter { "system:windows", "toolset:not msc*" }
+			resincludedirs {
+				"%{_MAIN_SCRIPT_DIR}/src"
+			}
+		filter { "system:windows", "toolset:msc*" }
+			resincludedirs {
+				"$(ProjectDir)src" -- fix for VS IDE
 			}
 		filter {}
 		

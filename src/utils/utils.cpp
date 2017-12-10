@@ -12,4 +12,17 @@ namespace utils
 
 		SetCurrentDirectory(exeName);
 	}
+
+#ifdef _WIN32
+	std::string load_resource(int resId)
+	{
+		HRSRC res = FindResource(GetModuleHandleA(nullptr), MAKEINTRESOURCE(resId), RT_RCDATA);
+		if (!res) return "";
+
+		HGLOBAL handle = LoadResource(nullptr, res);
+		if (!handle) return "";
+
+		return std::string(LPSTR(LockResource(handle)), SizeofResource(nullptr, res));
+	}
+#endif
 }

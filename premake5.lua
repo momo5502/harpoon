@@ -47,7 +47,7 @@ workspace "harpoon"
 	filter {}
 		
 	project "harpoon"
-		kind "ConsoleApp"
+		kind "WindowedApp"
 		language "C++"
 		cppdialect_fixed "C++17"
 		files {

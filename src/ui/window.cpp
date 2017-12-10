@@ -24,8 +24,8 @@
 #include <nuklear_d3d11.h>#pragma warning(pop)
 #include "ui/window.hpp"
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 400
+#define WINDOW_WIDTH 500
+#define WINDOW_HEIGHT 300
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_INDEX_BUFFER 128 * 1024
@@ -136,12 +136,15 @@ namespace ui
 			{
 				nk_layout_row_begin(ctx, NK_STATIC, 0, 2);
 				{
-					for (auto& client : sniffer->get_clients())
+					// Make sure to store a copy of all clients, so that the 'enabled' ptr passed to nuklear
+					// stays alive until the next frame (due to the stored shared_ptrs)
+					this->client_copy = sniffer->get_clients();
+					for (auto& client : this->client_copy)
 					{
 						nk_layout_row_push(ctx, 100);
-						nk_label(this->ctx, client.to_string().data(), NK_TEXT_LEFT);
+						nk_label(this->ctx, client->to_string().data(), NK_TEXT_LEFT);
 
-						nk_checkbox_label(this->ctx, "Target", &client.enabled);
+						nk_checkbox_label(this->ctx, "Poison", &client->enabled);
 					}
 				}
 				nk_layout_row_end(this->ctx);
@@ -155,6 +158,26 @@ namespace ui
 				if (nk_button_label(ctx, "Refresh"))
 				{
 					this->sniffer->scan_network();
+				}
+
+				nk_layout_row_dynamic(ctx, 30, 2);
+				if (nk_option_label(ctx, "Forward Packets", this->forwardPackets))
+				{
+					if (!this->forwardPackets)
+					{
+						this->sniffer->forward_packets(true);
+					}
+
+					this->forwardPackets = true;
+				}
+				if (nk_option_label(ctx, "Drop Packets", !this->forwardPackets))
+				{
+					if (this->forwardPackets)
+					{
+						this->sniffer->forward_packets(false);
+					}
+
+					this->forwardPackets = false;
 				}
 
 				nk_group_end(this->ctx);
@@ -264,7 +287,7 @@ namespace ui
 		nk_d3d11_font_stash_end();
 		nk_style_set_font(ctx, &droid->handle);
 
-		while (this->running)
+		while (this->running && this->sniffer->is_running())
 		{
 			if (IsWindow(this->hwnd) == FALSE) this->running = false;
 
@@ -274,10 +297,13 @@ namespace ui
 		}
 
 		this->uninit_d3d11();
+		this->client_copy.clear();
 		this->running = false;
+
+		this->sniffer->stop();
 	}
 
-	window::window(network::sniffer* _sniffer) : running(true), swap_chain(nullptr), device(nullptr), context(nullptr), rt_view(nullptr), ctx(nullptr), sniffer(_sniffer)
+	window::window(network::sniffer* _sniffer) : running(true), swap_chain(nullptr), device(nullptr), context(nullptr), rt_view(nullptr), ctx(nullptr), sniffer(_sniffer), forwardPackets(false)
 	{
 		this->thread = std::thread(std::bind(&window::runner, this));
 	}

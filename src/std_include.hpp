@@ -67,6 +67,8 @@ typedef char* LPSTR;
 #include <regex>
 #include <atomic>
 
+#include <optional>
+
 #ifdef _POSIX
 #include <libnet.h>
 #else
@@ -74,7 +76,6 @@ typedef char* LPSTR;
 #endif
 
 #include "utils/utils.hpp"
-#include "utils/logger.hpp"
 #include "utils/memory.hpp"
 #include "utils/signal_handler.hpp"
 

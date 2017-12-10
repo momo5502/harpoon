@@ -19,6 +19,7 @@ namespace ui
 		network::sniffer* sniffer;
 
 		bool running;
+		bool forwardPackets;
 		std::thread thread;
 
 		HWND hwnd;
@@ -30,6 +31,8 @@ namespace ui
 		ID3D11RenderTargetView* rt_view;
 
 		struct nk_context* ctx;
+
+		std::vector<std::shared_ptr<class network::client>> client_copy;
 
 		void init_d3d11();
 		void uninit_d3d11();

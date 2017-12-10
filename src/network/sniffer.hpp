@@ -38,9 +38,6 @@ namespace network
 		sniffer();
 		~sniffer();
 
-		bool create_arp_packet(network::address dest_ip = network::address{ "255.255.255.255" });
-
-		bool send();
 		void on_packet(packet_callback callback);
 
 		void run();
@@ -53,7 +50,7 @@ namespace network
 
 		libnet_t* get_handle();
 
-		std::vector<client>& get_clients();
+		std::vector<std::shared_ptr<client>> get_clients();
 
 		void scan_network();
 
@@ -65,11 +62,18 @@ namespace network
 		packet_callback callback;
 		bool stopped;
 
+		std::optional<network::address> gateway_address;
+
+		std::mutex client_mutex;
 		std::atomic<bool> scanning;
-		std::vector<client> clients;
+		std::vector<std::shared_ptr<client>> clients;
 		std::thread scan_thread;
+		std::thread arp_thread;
+
+		bool send_arp_packet(network::address dest_ip = network::address{ "255.255.255.255" });
 
 		void scan_runner();
+		void arp_runner();
 
 		void process_packet(const struct pcap_pkthdr* pkthdr, const u_char* packet);
 		static void forward_packet(u_char* s, const struct pcap_pkthdr* pkthdr, const u_char* packet);

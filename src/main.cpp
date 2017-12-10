@@ -39,6 +39,7 @@ int main(int /*argc*/, char** /*argv*/)
 
 	print_fancy_ascii_header();
 
+	ui::window window;
 	network::sniffer sniffer;
 	sniffer.forward_packets(false);
 
@@ -53,7 +54,7 @@ int main(int /*argc*/, char** /*argv*/)
 
 		utils::logger::info("Starting ARP poisoning");
 
-		while (sniffer.is_running())
+		while (sniffer.is_running() && window.is_running())
 		{
 			if (!sniffer.send())
 			{
@@ -62,13 +63,15 @@ int main(int /*argc*/, char** /*argv*/)
 
 			std::this_thread::sleep_for(10ms);
 		}
+
+		sniffer.stop();
+		window.stop();
 	});
 
 	/*sniffer.on_packet([&](network::packet* packet)
 	{
 
 	});*/
-	ui::window window;
 
 	sniffer.run();
 

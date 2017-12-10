@@ -38,6 +38,7 @@ namespace utils
 		static void set_verbose(bool enabled);
 
 	private:
+		static std::recursive_mutex mutex;
 		static bool verbose;
 
 #ifdef _WIN32

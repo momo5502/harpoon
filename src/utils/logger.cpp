@@ -2,15 +2,19 @@
 
 namespace utils
 {
+	std::recursive_mutex logger::mutex;
 	bool logger::verbose = false;
 
 	void logger::set_verbose(bool enabled)
 	{
+		std::lock_guard<std::recursive_mutex> _(logger::mutex);
 		logger::verbose = enabled;
 	}
 
 	void logger::set_title(std::string title)
 	{
+		std::lock_guard<std::recursive_mutex> _(logger::mutex);
+
 #ifdef _WIN32
 		SetConsoleTitleA(title.data());
 #elif defined(_POSIX)
@@ -21,6 +25,8 @@ namespace utils
 
 	void logger::info(const char* message, ...)
 	{
+		std::lock_guard<std::recursive_mutex> _(logger::mutex);
+
 		va_list ap;
 		va_start(ap, message);
 
@@ -28,10 +34,14 @@ namespace utils
 		printf("[*] %s\n", logger::format(&ap, message));
 
 		va_end(ap);
+
+		fflush(stdout);
 	}
 
 	void logger::success(const char* message, ...)
 	{
+		std::lock_guard<std::recursive_mutex> _(logger::mutex);
+
 		va_list ap;
 		va_start(ap, message);
 
@@ -39,10 +49,14 @@ namespace utils
 		printf("[+] %s\n", logger::format(&ap, message));
 
 		va_end(ap);
+
+		fflush(stdout);
 	}
 
 	void logger::warn(const char* message, ...)
 	{
+		std::lock_guard<std::recursive_mutex> _(logger::mutex);
+
 		va_list ap;
 		va_start(ap, message);
 
@@ -50,10 +64,14 @@ namespace utils
 		printf("[!] %s\n", logger::format(&ap, message));
 
 		va_end(ap);
+
+		fflush(stdout);
 	}
 
 	void logger::error(const char* message, ...)
 	{
+		std::lock_guard<std::recursive_mutex> _(logger::mutex);
+
 		va_list ap;
 		va_start(ap, message);
 
@@ -61,10 +79,14 @@ namespace utils
 		printf("[-] %s\n", logger::format(&ap, message));
 
 		va_end(ap);
+
+		fflush(stdout);
 	}
 
 	void logger::debug(const char* message, ...)
 	{
+		std::lock_guard<std::recursive_mutex> _(logger::mutex);
+
 		if (logger::verbose)
 		{
 			va_list ap;
@@ -74,6 +96,8 @@ namespace utils
 			printf("[*] %s\n", logger::format(&ap, message));
 
 			va_end(ap);
+
+			fflush(stdout);
 		}
 	}
 
@@ -93,6 +117,7 @@ namespace utils
 	void logger::set_color(const char* color)
 	{
 		printf("%s", color);
+		fflush(stdout);
 	}
 #endif
 

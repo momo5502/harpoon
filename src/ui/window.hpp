@@ -19,7 +19,8 @@ namespace ui
 		network::sniffer* sniffer;
 
 		bool running;
-		bool forwardPackets;
+		int dump_packets;
+		bool forward_packets;
 		std::thread thread;
 
 		HWND hwnd;

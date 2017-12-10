@@ -46,8 +46,10 @@ namespace network
 
 		bool forward_packets(bool forward);
 
+		void set_dumping(bool dumping);
+
 		network::address get_gateway_address();
-		network::address get_local_address();
+		std::vector<std::string> get_local_address();
 
 		libnet_t* get_handle();
 
@@ -59,6 +61,8 @@ namespace network
 
 	private:
 		pcap_t* descr;
+		pcap_dumper_t* dumper;
+
 		libnet_t* handle;
 		char errbuf[LIBNET_ERRBUF_SIZE];
 
@@ -66,7 +70,6 @@ namespace network
 		bool stopped;
 
 		std::optional<network::address> gateway_address;
-		std::optional<network::address> local_address;
 
 		std::mutex client_mutex;
 		std::atomic<bool> scanning;

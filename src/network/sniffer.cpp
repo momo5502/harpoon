@@ -21,6 +21,18 @@ namespace network
 		return this->handle && !this->stopped;
 	}
 
+	void sniffer::set_dumping(bool dumping)
+	{
+		if (this->dumper)
+		{
+			auto old_dumper = this->dumper;
+			this->dumper = nullptr;
+			pcap_dump_close(old_dumper);
+		}
+
+		if(dumping) this->dumper = pcap_dump_open(this->descr, "sniff.pcap");
+	}
+
 	bool sniffer::forward_packets(bool forward)
 	{
 #ifdef _WIN32
@@ -106,7 +118,7 @@ namespace network
 
 #ifdef _WIN32
 		utils::memory::allocator allocator;
-		PIP_ADAPTER_INFO  adapter_infos = allocator.allocate<IP_ADAPTER_INFO>();
+		PIP_ADAPTER_INFO adapter_infos = allocator.allocate<IP_ADAPTER_INFO>();
 		DWORD size = sizeof(IP_ADAPTER_INFO);
 
 		if (GetAdaptersInfo(adapter_infos, &size) == ERROR_BUFFER_OVERFLOW)
@@ -136,26 +148,66 @@ namespace network
 		return false;
 	}
 
-	network::address sniffer::get_local_address()
+	std::vector<std::string> sniffer::get_local_address()
 	{
-		if (!this->handle) return network::address{ "0.0.0.0" };
-		if (this->local_address.has_value()) return this->local_address.value();
-		this->local_address.emplace(network::address{ "0.0.0.0" });
+		std::vector<std::string> addresses;
+		if (!this->handle) return addresses;
 
 #ifdef _WIN32
-		IP_ADAPTER_INFO info;
-		if (sniffer::get_adapter_info(&info))
+		utils::memory::allocator allocator;
+		PIP_ADAPTER_ADDRESSES addrs = allocator.allocate<IP_ADAPTER_ADDRESSES>();
+		DWORD size = sizeof(IP_ADAPTER_INFO);
+
+		if (GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, NULL, addrs, &size) == ERROR_BUFFER_OVERFLOW)
 		{
-			this->local_address.emplace(network::address{ info.IpAddressList.IpAddress.String });
+			allocator.free(addrs);
+			addrs = PIP_ADAPTER_ADDRESSES(allocator.allocate_array<char>(size));
 		}
 
-		return this->local_address.value();
-#elif _POSIX
-		// Use getifaddr()
-#error "Not supported yet!"
+		if (GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, NULL, addrs, &size) == NO_ERROR)
+		{
+			const char* dev_name = libnet_getdevice(this->handle);
+			std::string device_uuid = sniffer::get_device_uuid(dev_name);
+
+			while (addrs)
+			{
+				if (device_uuid == addrs->AdapterName)
+				{
+					auto addr = addrs->FirstUnicastAddress;
+					while (addr)
+					{
+						char buffer[MAX_PATH] = { 0 };
+
+						if (addr->Address.lpSockaddr->sa_family == AF_INET)
+						{
+							sockaddr_in *sa_in = reinterpret_cast<sockaddr_in*>(addr->Address.lpSockaddr);
+							inet_ntop(addr->Address.lpSockaddr->sa_family, &sa_in->sin_addr, buffer, sizeof(buffer));
+						}
+						else if (addr->Address.lpSockaddr->sa_family == AF_INET6)
+						{
+							sockaddr_in6 *sa_in6 = reinterpret_cast<sockaddr_in6 *>(addr->Address.lpSockaddr);
+							inet_ntop(addr->Address.lpSockaddr->sa_family, &sa_in6->sin6_addr, buffer, sizeof(buffer));
+						}
+						else
+						{
+							addr = addr->Next;
+							continue;
+						}
+
+						addresses.push_back(buffer);
+						addr = addr->Next;
+					}
+
+					break;
+				}
+
+				addrs = addrs->Next;
+			}
+		}
 #else
 #error "Unsupported architecture"
 #endif
+		return addresses;
 	}
 
 	network::address sniffer::get_gateway_address()
@@ -205,6 +257,7 @@ namespace network
 		p.data = data;
 
 		++this->sniffed_packets;
+		if(this->dumper) pcap_dump(PBYTE(this->dumper), pkthdr, data);
 		if (this->callback) this->callback(&p);
 	}
 
@@ -341,16 +394,26 @@ namespace network
 		this->descr = pcap_open_live(dev, 2048, 0, 512, this->errbuf);
 		if (!this->descr) return;
 
-		char filter[100];
+		char filter[500];
 		libnet_ether_addr* addr = libnet_get_hwaddr(this->handle);
 
-		_snprintf_s(filter, sizeof(filter), "not ether host %02X:%02X:%02X:%02X:%02X:%02X",
+		auto ips = this->get_local_address();
+		std::string ip_filter;
+
+		for (auto& ip : ips)
+		{
+			ip_filter.append(" and (not host ");
+			ip_filter.append(ip);
+			ip_filter.append(")");
+		}
+
+		_snprintf_s(filter, sizeof(filter), "(tcp or udp) and (not broadcast) and (not multicast) and (ether dst %02X:%02X:%02X:%02X:%02X:%02X) %s",
 			addr->ether_addr_octet[0],
 			addr->ether_addr_octet[1],
 			addr->ether_addr_octet[2],
 			addr->ether_addr_octet[3],
 			addr->ether_addr_octet[4],
-			addr->ether_addr_octet[5]);
+			addr->ether_addr_octet[5], ip_filter.data());
 
 		bpf_u_int32 mask, net;
 		if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) return;
@@ -366,7 +429,7 @@ namespace network
 
 	bool sniffer::send_arp_packet(network::address dest_ip)
 	{
-		if (!this->handle) return false;
+		if (!this->handle || this->stopped) return false;
 		libnet_clear_packet(this->handle);
 
 		uint8_t sha[6], spa[4], tha[6], tpa[4];
@@ -390,7 +453,7 @@ namespace network
 		this->callback = _callback;
 	}
 
-	sniffer::sniffer() : descr(nullptr), handle(nullptr), stopped(false), scanning(false), sniffed_packets(0)
+	sniffer::sniffer() : descr(nullptr), handle(nullptr), stopped(false), scanning(false), sniffed_packets(0), dumper(nullptr)
 	{
 		this->handle = libnet_init(LIBNET_LINK, nullptr, this->errbuf);
 	}

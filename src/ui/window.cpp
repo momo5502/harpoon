@@ -159,23 +159,29 @@ namespace ui
 				}
 
 				nk_layout_row_dynamic(ctx, 30, 2);
-				if (nk_option_label(ctx, "Forward Packets", this->forwardPackets))
+				if (nk_option_label(ctx, "Forward Packets", this->forward_packets))
 				{
-					if (!this->forwardPackets)
+					if (!this->forward_packets)
 					{
 						this->sniffer->forward_packets(true);
 					}
 
-					this->forwardPackets = true;
+					this->forward_packets = true;
 				}
-				if (nk_option_label(this->ctx, "Drop Packets", !this->forwardPackets))
+				if (nk_option_label(this->ctx, "Drop Packets", !this->forward_packets))
 				{
-					if (this->forwardPackets)
+					if (this->forward_packets)
 					{
 						this->sniffer->forward_packets(false);
 					}
 
-					this->forwardPackets = false;
+					this->forward_packets = false;
+				}
+
+				nk_layout_row_dynamic(this->ctx, 0, 1);
+				if (nk_checkbox_label(this->ctx, "Dump packets", &this->dump_packets))
+				{
+					this->sniffer->set_dumping(this->dump_packets != 0);
 				}
 
 				nk_layout_row_dynamic(this->ctx, 0, 1);
@@ -308,7 +314,7 @@ namespace ui
 		this->sniffer->stop();
 	}
 
-	window::window(network::sniffer* _sniffer) : running(true), swap_chain(nullptr), device(nullptr), context(nullptr), rt_view(nullptr), ctx(nullptr), sniffer(_sniffer), forwardPackets(false)
+	window::window(network::sniffer* _sniffer) : running(true), swap_chain(nullptr), device(nullptr), context(nullptr), rt_view(nullptr), ctx(nullptr), sniffer(_sniffer), forward_packets(false), dump_packets(0)
 	{
 		this->thread = std::thread(std::bind(&window::runner, this));
 	}

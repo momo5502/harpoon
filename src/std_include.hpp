@@ -64,6 +64,7 @@ typedef char* LPSTR;
 #include <vector>
 #include <functional>
 #include <fstream>
+#include <sstream>
 #include <regex>
 #include <atomic>
 

@@ -1,5 +1,6 @@
 #include "std_include.hpp"
-#include "network/address.hpp"
+
+#include "network/address.hpp"
 #include "network/sniffer.hpp"
 
 #pragma warning(push)
@@ -22,7 +23,9 @@
 #define CINTERFACE
 #define D3D11_NO_HELPERS
 #include <nuklear.h>
-#include <nuklear_d3d11.h>#pragma warning(pop)
+#include <nuklear_d3d11.h>
+
+#pragma warning(pop)
 #include "ui/window.hpp"
 
 #define WINDOW_WIDTH 500

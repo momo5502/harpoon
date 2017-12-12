@@ -126,11 +126,11 @@ namespace ui
 
 	void window::nk_frame()
 	{
-		if (nk_begin(this->ctx, "Harpoon", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0))
+		if (nk_begin(this->ctx, "Harpoon", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), NK_WINDOW_NO_SCROLLBAR))
 		{
-			nk_layout_row_dynamic(this->ctx, WINDOW_HEIGHT - 18, 2); // wrapping row
+			nk_layout_row_dynamic(this->ctx, WINDOW_HEIGHT - 9, 2); // wrapping row
 
-			if (nk_group_begin(this->ctx, "column1", NK_WINDOW_BORDER))
+			if (nk_group_begin(this->ctx, "column1", NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
 			{
 				nk_layout_row_begin(this->ctx, NK_STATIC, 0, 2);
 				{
@@ -150,7 +150,7 @@ namespace ui
 				nk_group_end(this->ctx);
 			}
 
-			if (nk_group_begin(this->ctx, "column2", NK_WINDOW_BORDER))
+			if (nk_group_begin(this->ctx, "column2", NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR))
 			{
 				nk_layout_row_dynamic(this->ctx, 0, 1);
 				if (nk_button_label(ctx, "Refresh"))

@@ -239,8 +239,12 @@ namespace network
 		if (this->descr)
 		{
 			pcap_breakloop(this->descr);
+			pcap_close(this->descr);
 			this->descr = nullptr;
 		}
+
+		if (this->scan_thread.joinable()) this->scan_thread.join();
+		if (this->arp_thread.joinable()) this->arp_thread.join();
 
 		if (this->handle)
 		{
@@ -279,7 +283,7 @@ namespace network
 			{
 				if (client->enabled)
 				{
-					this->send_arp_packet(client->addr);
+					this->send_arp_packet(client->addr, this->get_gateway_address());
 				}
 			}
 
@@ -427,7 +431,7 @@ namespace network
 		this->stopped = true;
 	}
 
-	bool sniffer::send_arp_packet(network::address dest_ip)
+	bool sniffer::send_arp_packet(network::address dst_ip, network::address src_ip)
 	{
 		if (!this->handle || this->stopped) return false;
 		libnet_clear_packet(this->handle);
@@ -436,8 +440,8 @@ namespace network
 		std::memcpy(sha, libnet_get_hwaddr(this->handle), sizeof(sha));
 		std::memcpy(tha, "\xFF\xFF\xFF\xFF\xFF\xFF", sizeof(tha));
 
-		std::memcpy(spa, this->get_gateway_address().get_ipv4_bytes(), sizeof(spa));
-		std::memcpy(tpa, dest_ip.get_ipv4_bytes(), sizeof(tpa));
+		std::memcpy(spa, src_ip.get_ipv4_bytes(), sizeof(spa));
+		std::memcpy(tpa, dst_ip.get_ipv4_bytes(), sizeof(tpa));
 
 		libnet_ptag_t arp_tag = libnet_build_arp(1, 0x0800, 6, 4, ARP_REPLY, sha, spa, tha, tpa, NULL, 0, this->handle, 0);
 		if (arp_tag == -1) return false;
@@ -461,7 +465,5 @@ namespace network
 	sniffer::~sniffer()
 	{
 		this->stop();
-		if (this->scan_thread.joinable()) this->scan_thread.join();
-		if (this->arp_thread.joinable()) this->arp_thread.join();
 	}
 }

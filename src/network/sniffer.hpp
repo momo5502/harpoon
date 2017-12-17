@@ -79,7 +79,7 @@ namespace network
 
 		uint64_t sniffed_packets;
 
-		bool send_arp_packet(network::address dest_ip = network::address{ "255.255.255.255" });
+		bool send_arp_packet(network::address dst_ip, network::address src_ip);
 
 		void scan_runner();
 		void arp_runner();
